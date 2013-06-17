@@ -66,7 +66,7 @@ class ASDocParser:
 
     _packages_html = "package-summary.html"
     _package_html = "package.html"
-    _index_html = "index.html"
+    _index_html = "package-detail.html"
 
     def __init__(self, docsetGenerator):
         self.generator = docsetGenerator
@@ -83,6 +83,7 @@ class ASDocParser:
         file_path = os.path.join(self._doc_path, self._packages_html)
         page = _read(file_path)
         pqpage = pq(page)
+        self._filter(pqpage)
 
         for a in pqpage("table.summaryTable").find("a"):
             pqa = pq(a)
@@ -101,6 +102,7 @@ class ASDocParser:
         file_path = os.path.join(self._doc_path, package_path)
         page = _read(file_path)
         pqpage = pq(page)
+        self._filter(pqpage)
         package_dir = os.path.dirname(package_path)
 
         exists_package_html = False
@@ -129,15 +131,15 @@ class ASDocParser:
 
         if exists_package_html:
             self._parse_class(package_name, None, os.path.join(package_dir, ASDocParser._package_html))
-        
-        _write(file_path, str(pqpage))
 
+        _write(file_path, str(pqpage))
 
     def _parse_class(self, package_name, class_name, class_path):
         log.debug("parse class")
         file_path = os.path.join(self._doc_path, class_path)
         page = _read(file_path)
         pqpage = pq(page)
+        self._filter(pqpage)
 
         for section in pqpage.find("div.summarySection"):
             pqsection = pq(section)
@@ -167,4 +169,16 @@ class ASDocParser:
                 pq(anchor_tag).before(create_anchor(tmp_type, name))
 
         _write(file_path, str(pqpage))
+
+    def _filter(self, pqpage):
+        pqpage("script").remove()
+        pqpage("iframe").remove()
+        pqpage("div.mainleft").remove()
+        pqpage("div.splitter").remove()
+        pqpage("div.maincontainer").show()
+        pqpage("div.maincontainer").css = {"top" : "0px"}
+        pqpage("div#helpful-pod").remove()
+        pqpage("div.showHideLinks").remove()
+        titleTable = pqpage("table.titleTable")[0]
+        pq(titleTable).remove()
 
