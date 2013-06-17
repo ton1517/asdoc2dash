@@ -65,6 +65,7 @@ def _get_type_by_label(label):
 class ASDocParser:
 
     _packages_html = "package-summary.html"
+    _package_html = "package.html"
     _index_html = "index.html"
 
     def __init__(self, docsetGenerator):
@@ -102,6 +103,8 @@ class ASDocParser:
         pqpage = pq(page)
         package_dir = os.path.dirname(package_path)
 
+        exists_package_html = False
+
         for index, table in enumerate(pqpage.find("table.summaryTable")):
             typelabel = pqpage("div.summaryTableTitle").eq(index).text()
 
@@ -116,12 +119,17 @@ class ASDocParser:
                 if dash_type in {DashType.METHOD, DashType.FUNCTION}:
                     name = name + "()"
 
-                self.generator.add_docset_index(name, dash_type, path)
                 pq(a).before(create_anchor(dash_type, name))
 
                 if dash_type in {DashType.CLASS, DashType.INTERFACE}:
+                    self.generator.add_docset_index(name, dash_type, path)
                     self._parse_class(package_name, name, path)
+                else:
+                    exists_package_html = True
 
+        if exists_package_html:
+            self._parse_class(package_name, None, os.path.join(package_dir, ASDocParser._package_html))
+        
         _write(file_path, str(pqpage))
 
 
